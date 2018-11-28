@@ -102,5 +102,3 @@ document.addEventListener('DOMContentLoaded', () => { // event object is optiona
       }) // search box event listener
 
 }) // end of DOMContentLoaded
-
-// TODO:
