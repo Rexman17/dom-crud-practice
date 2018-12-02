@@ -1,126 +1,95 @@
-// FETCH AND AJAX
-document.addEventListener('DOMContentLoaded', () => { // event object is optional here
-// ******** DOM ELEMENTS ***************
-  const editGiftForm = document.getElementById('new-gift-form')
-  let giftsContainer = document.getElementById('gift-container')
-  const giftNameInput = document.getElementById('gift-name-input')
-  const giftImgInput = document.getElementById('gift-image-input')
-  const searchBox = document.getElementById('search-box') // make use of this in the search deliverable
-// ********** VARIABLES ***************
+document.addEventListener('DOMContentLoaded', () => {
+  // DOM
+  const giftsContainer = document.getElementById('gifts-container')
+  const nameEditBox = document.getElementById('gift-name-input')
+  const urlEditBox = document.getElementById('gift-image-input')
+  const editForm = document.getElementById('new-gift-form')
+  const searchInput = document.getElementById('filter-input')
+  // Variables
   const giftsURL = 'http://localhost:3000/gifts'
-   // fill this in the get request
-   let allGifts = ''
-// ********** FETCHES & EVENT LISTENERS **********
-  fetch(giftsURL, { method: 'GET' })
-  .then(r => r.json())
-  .then(arrayOfGiftObjects => {
-    allGifts = arrayOfGiftObjects
-    console.log("initially got all gifts");
-    console.log("all gifts are", allGifts);
-    console.log("-------");
-    // console.log(allGifts);
-    // console.log(parsedJSON);
-    arrayOfGiftObjects.forEach((giftObject) => {
-      giftsContainer.innerHTML += `<div id="gift-${giftObject.id}">
-      <h3>${giftObject.name}</h3>
-      <img src=${giftObject.image}>
-      <button data-id="${giftObject.id}" class="edit" type="button">Edit Me!</button>
-      <button data-id="${giftObject.id}" class="delete" type="button">Delete</button>
-      </div>
-      `
-    })
-  }) // end of fetch
-
-    // event listener for CLICKING the EDIT BUTTON OR DELETE
-    // we didn't update our data yet!
-    giftsContainer.addEventListener('click', e => {
-      const clickedGiftId = e.target.dataset.id
-      if (e.target.className === 'edit') { // when we click EDIT button
-        let foundGift = allGifts.find(gift => gift.id == clickedGiftId) // gift obj from array of objs retreived from original fetch
-        // fetch(`http://localhost:3000/gifts/${clickedGiftId}`)
-          // .then(r => r.json())
-          // .then(foundGift => {
-            // find input fields for the form and pre fill them
-            giftNameInput.value = foundGift.name
-            giftImgInput.value = foundGift.image
-            editGiftForm.dataset.id = clickedGiftId
-        //     console.log(editGiftForm.dataset.id); // save the id of the clicked image in a dataset on the edit form u will then submit on
-        //   })
-      } else if (e.target.className === 'delete') {
-        giftsContainer.querySelector(`#gift-${clickedGiftId}`).remove() // optimistically render the edit
-
-        console.log("deleting gift")
-        console.log("all gifts arr is", allGifts)
-        console.log("------");
-
-        fetch(`http://localhost:3000/gifts/${clickedGiftId}`, {
-          method: 'DELETE'
-        })
-          .then(r => r.json())
-          // .then(json => {
-          //   debugger
-          // }) // pessimistically would be inside this then
-      }
-      // debugger
-      console.log(allGifts);
-    }) // end of edit click event listener
-
-    // patching/fetch event listener for when u submit on edit form
-    editGiftForm.addEventListener('submit', e => {
-      e.preventDefault()
-      console.log("editing gift")
-      console.log("all gifts arr is", allGifts)
-      console.log("------");
-      // console.log(e);
-      fetch(`http://localhost:3000/gifts/${e.target.dataset.id}`, { // id stored in the form itself that we assigned with editGiftForm.dataset.id = clickedGiftId
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json'
-        },
-        body: JSON.stringify({
-          name: giftNameInput.value,
-          image: giftImgInput.value
-        })
-      }) // fetch
-      .then(r => r.json())
-      .then(editedGiftObj => {
-        // console.log(editedGiftObj);
-        // append to DOM - find the one gift and update it
-        // console.log(editedGiftObj.id);
-        let divOfGiftToUpdate = document.querySelector(`#gift-${editedGiftObj.id}`)
-        divOfGiftToUpdate.querySelector('h3').innerText = editedGiftObj.name
-        divOfGiftToUpdate.querySelector('img').src = editedGiftObj.image
+  let dataStore = [] // fill this in intial GET to server
+  // Fetches and Event Listeners
+  // Initial Fetch to GET all gift data and RENDER on page
+  fetch(giftsURL) // { method: 'GET' } is the default
+    .then(r => r.json())
+    .then(arrayOfGiftObjects => {
+      dataStore = arrayOfGiftObjects // populating the dataStore
+      let jsonAsHTML = dataStore.map((giftObject) => {
+        return `<li id="gift-${giftObject.id}"><h2>${giftObject.name}</h2>
+                <img src="${giftObject.image}">
+                <button id=${giftObject.id} >Edit Me</button>
+                <button data-id="${giftObject.id}">Delete Me</button></li>
+                `
       })
-    }) // submit event listener
+      giftsContainer.innerHTML = jsonAsHTML.join('')
+    })
 
-      // search for and filter particular gifts with names that include a particular search query.
-      searchBox.addEventListener('input', e => {
-        const userInput = e.target.value
-        // console.log(userInput);
-        fetch(giftsURL)
-        .then(res => res.json())
-        .then(json => {
-          allGifts = json
-          const filteredGifts = allGifts.filter((gift) => {
-            return gift.name.includes(userInput) // filtered the array in memory
-          })
-          console.log("all gifts are", allGifts);
-          console.log("filtered gifts are", filteredGifts);
-          console.log("-----------");
-          // now render it in the DOM!
-          const giftHTML = filteredGifts.map((giftObject) => {
-            return `
-            <div data-id="${giftObject.id}">
-            <h3>${giftObject.name}</h3>
-            <img src=${giftObject.image}>
-            <button data-id="${giftObject.id}" class="edit" type="button">Edit Me!</button>
-            <button data-id="${giftObject.id}" class="delete" type="button">Delete</button>
-            </div>
-            `
-          })
-          giftsContainer.innerHTML = giftHTML.join('')
-        })
-      }) // search box event listener
+  giftsContainer.addEventListener('click', (e) => {
+    if (e.target.innerText === 'Edit Me') {
+      let clickedGiftId = e.target.id
+      editForm.dataset.id = clickedGiftId // assign this
+      let clickedGift = dataStore.find((giftObject) => { return giftObject.id == clickedGiftId })
+      // use clickedGift to populate edit fields in form
+      nameEditBox.value = clickedGift.name
+      urlEditBox.value = clickedGift.image
+    } else if (e.target.innerText === 'Delete Me') {
+      let giftToDeleteId = e.target.dataset.id
+      // find the gift on the page to get rid of it - optimistcally
+      let giftToDelete = document.getElementById(`gift-${giftToDeleteId}`)
+      giftToDelete.remove()
+      // remove from dataStore
+      dataStore = dataStore.filter((gift) => {
+        return gift.id != giftToDeleteId
+      })
+      // now fetch to update server - go to SPECIFIC gift's page
+      fetch(`http://localhost:3000/gifts/${giftToDeleteId}`, {
+        method: 'DELETE'
+      })
+    }
+  })
 
-}) // end of DOMContentLoaded
+  editForm.addEventListener('submit', e => {
+    e.preventDefault()
+    // e.target.dataset.id is the clicked gift's id which we assigned above
+    // optimistically render
+    let giftToUpdate = document.getElementById(`gift-${e.target.dataset.id}`)
+    let h2 = giftToUpdate.querySelector('h2')
+    h2.innerText = nameEditBox.value
+    let nameToSendToServer = nameEditBox.value
+    let img = giftToUpdate.querySelector('IMG')
+    img.src = urlEditBox.value
+    let imgToSendToServer = urlEditBox.value
+    // MUST ALSO UPDATE THE DATA STORE
+    let foundGift = dataStore.find((gift) => { return gift.id == e.target.dataset.id })
+    foundGift.name = nameToSendToServer
+    foundGift.image = imgToSendToServer
+    // hit the server w the patch
+    fetch(`http://localhost:3000/gifts/${e.target.dataset.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        "name": nameToSendToServer,
+        "image": imgToSendToServer
+      })
+    })
+  })
+
+  // FILTER FUNCTIONALITY
+  searchInput.addEventListener('input', (e) => {
+    let userInput = searchInput.value.toLowerCase()
+    let filtered = dataStore.filter((gift) => { return gift.name.includes(userInput) })
+    // render the filtered data on to page
+    let jsonAsHTML = filtered.map((giftObject) => {
+      return `<li id="gift-${giftObject.id}"><h2>${giftObject.name}</h2>
+              <img src="${giftObject.image}">
+              <button id=${giftObject.id} >Edit Me</button>
+              <button data-id="${giftObject.id}">Delete Me</button></li>
+              `
+    })
+    giftsContainer.innerHTML = jsonAsHTML.join('')
+  })
+
+
+  // Helpers if you have time...
+
+}) // DOMContentLoaded
